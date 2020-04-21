@@ -9,6 +9,11 @@ def daysToKeep = (env.BRANCH_NAME=='develop') ? '7' : '-1'
 def numToKeep = (env.BRANCH_NAME=='develop') ? '-1' : '10'
 
 pipeline {
+
+    triggers {
+        cron('@hourly')
+    }
+
     agent {
       kubernetes {
         cloud 'zeebe-ci'
@@ -24,7 +29,8 @@ pipeline {
     }
 
     options {
-        buildDiscarder(logRotator(daysToKeepStr: daysToKeep, numToKeepStr: numToKeep))
+        buildDiscarder(logRotator(daysToKeepStr: '3', numToKeepStr: '-1'))
+
         timestamps()
         timeout(time: 45, unit: 'MINUTES')
     }
