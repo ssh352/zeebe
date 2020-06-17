@@ -5,18 +5,11 @@
  * Licensed under the Zeebe Community License 1.0. You may not use this file
  * except in compliance with the Zeebe Community License 1.0.
  */
-package io.zeebe.engine.processor;
+package io.zeebe.broker.system.monitoring;
 
-public interface StreamProcessorLifecycleAware {
+public interface DiskSpaceUsageListener {
 
-  /** Callback after reprocessing was successful and before regular processing begins */
-  default void onRecovered(final ReadonlyProcessingContext context) {}
+  default void onDiskSpaceUsageIncreasedAboveThreshold() {}
 
-  default void onClose() {}
-
-  default void onFailed() {}
-
-  default void onPaused() {}
-
-  default void onResumed() {}
+  default void onDiskSpaceUsageReducedBelowThreshold() {}
 }

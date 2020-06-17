@@ -65,6 +65,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   private final Collection<SegmentedJournalReader> readers = Sets.newConcurrentHashSet();
   private volatile JournalSegment<E> currentSegment;
   private volatile boolean open = true;
+  private final long minFreeDiskSpace;
 
   public SegmentedJournal(
       final String name,
@@ -75,7 +76,8 @@ public class SegmentedJournal<E> implements Journal<E> {
       final int maxEntrySize,
       final int maxEntriesPerSegment,
       final boolean flushOnCommit,
-      final Supplier<JournalIndex> journalIndexFactory) {
+      final Supplier<JournalIndex> journalIndexFactory,
+      final long minFreeSpace) {
     this.name = checkNotNull(name, "name cannot be null");
     this.storageLevel = checkNotNull(storageLevel, "storageLevel cannot be null");
     this.directory = checkNotNull(directory, "directory cannot be null");
@@ -89,6 +91,7 @@ public class SegmentedJournal<E> implements Journal<E> {
         journalIndexFactory == null
             ? () -> new SparseJournalIndex(DEFAULT_INDEX_DENSITY)
             : journalIndexFactory;
+    this.minFreeDiskSpace = minFreeSpace;
     open();
     this.writer = openWriter();
   }
@@ -293,7 +296,8 @@ public class SegmentedJournal<E> implements Journal<E> {
 
   /** Asserts that enough disk space is available to allocate a new segment. */
   private void assertDiskSpace() {
-    if (directory().getUsableSpace() < maxSegmentSize() * SEGMENT_BUFFER_FACTOR) {
+    if (directory().getUsableSpace()
+        < Math.max(maxSegmentSize() * SEGMENT_BUFFER_FACTOR, minFreeDiskSpace)) {
       throw new StorageException.OutOfDiskSpace(
           "Not enough space to allocate a new journal segment");
     }
@@ -698,6 +702,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 1024;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
+    private static final long DEFAULT_MIN_FREE_DISK_SPACE = 1024 * 1024 * 1024 * 3;
 
     protected String name = DEFAULT_NAME;
     protected StorageLevel storageLevel = StorageLevel.DISK;
@@ -709,6 +714,7 @@ public class SegmentedJournal<E> implements Journal<E> {
 
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private Supplier<JournalIndex> journalIndexFactory;
+    private long freeDiskBuffer = DEFAULT_MIN_FREE_DISK_SPACE;
 
     protected Builder() {}
 
@@ -809,6 +815,12 @@ public class SegmentedJournal<E> implements Journal<E> {
       return this;
     }
 
+    public Builder<E> withFreeDiskBuffer(final long freeDiskBuffer) {
+      checkArgument(freeDiskBuffer > 0, "minFreeDiskSpace must be positive");
+      this.freeDiskBuffer = freeDiskBuffer;
+      return this;
+    }
+
     /**
      * Sets the maximum number of allows entries per segment, returning the builder for method
      * chaining.
@@ -881,7 +893,8 @@ public class SegmentedJournal<E> implements Journal<E> {
           maxEntrySize,
           maxEntriesPerSegment,
           flushOnCommit,
-          journalIndexFactory);
+          journalIndexFactory,
+          freeDiskBuffer);
     }
   }
 }

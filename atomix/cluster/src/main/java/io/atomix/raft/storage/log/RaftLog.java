@@ -215,6 +215,11 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
       return this;
     }
 
+    public Builder withFreeDiskBuffer(final long freeDiskBuffer) {
+      journalBuilder.withFreeDiskBuffer(freeDiskBuffer);
+      return this;
+    }
+
     /**
      * Sets the maximum number of allows entries per segment, returning the builder for method
      * chaining.

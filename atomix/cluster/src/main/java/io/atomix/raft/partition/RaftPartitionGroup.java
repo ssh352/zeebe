@@ -441,6 +441,11 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
       return this;
     }
 
+    public Builder withFreeDiskBuffer(final long freeDiskBuffer) {
+      config.getStorageConfig().setFreeDiskBuffer(freeDiskBuffer);
+      return this;
+    }
+
     /**
      * Enables flush on commit.
      *
