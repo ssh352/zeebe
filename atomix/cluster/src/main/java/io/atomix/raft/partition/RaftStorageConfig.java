@@ -34,7 +34,7 @@ public class RaftStorageConfig {
   private static final boolean DEFAULT_FLUSH_ON_COMMIT = false;
   private static final PersistedSnapshotStoreFactory DEFAULT_SNAPSHOT_STORE_FACTORY =
       new FileBasedSnapshotStoreFactory();
-  private static final long DEFAULT_FREE_DISK_SPACE = 1024 * 1024 * 1024 * 1;
+  private static final long DEFAULT_FREE_DISK_SPACE = 1024L * 1024 * 1024 * 1; // 1GB
 
   private String directory;
   private StorageLevel level = DEFAULT_STORAGE_LEVEL;

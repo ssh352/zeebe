@@ -297,7 +297,7 @@ public class SegmentedJournal<E> implements Journal<E> {
   /** Asserts that enough disk space is available to allocate a new segment. */
   private void assertDiskSpace() {
     if (directory().getUsableSpace()
-        < Math.max(maxSegmentSize() * SEGMENT_BUFFER_FACTOR, minFreeDiskSpace)) {
+        < Math.max((long) maxSegmentSize() * SEGMENT_BUFFER_FACTOR, minFreeDiskSpace)) {
       throw new StorageException.OutOfDiskSpace(
           "Not enough space to allocate a new journal segment");
     }
@@ -702,8 +702,7 @@ public class SegmentedJournal<E> implements Journal<E> {
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1024 * 1024 * 32;
     private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 1024;
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
-    private static final long DEFAULT_MIN_FREE_DISK_SPACE = 1024 * 1024 * 1024 * 3;
-
+    private static final long DEFAULT_MIN_FREE_DISK_SPACE = 1024L * 1024 * 1024 * 1;
     protected String name = DEFAULT_NAME;
     protected StorageLevel storageLevel = StorageLevel.DISK;
     protected File directory = new File(DEFAULT_DIRECTORY);
