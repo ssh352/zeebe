@@ -7,7 +7,9 @@
  */
 package io.zeebe.engine.processor.workflow;
 
+import io.zeebe.engine.nwe.BpmnStreamProcessor;
 import io.zeebe.engine.processor.KeyGenerator;
+import io.zeebe.engine.processor.TypedRecordProcessor;
 import io.zeebe.engine.processor.TypedRecordProcessors;
 import io.zeebe.engine.processor.workflow.instance.CreateWorkflowInstanceProcessor;
 import io.zeebe.engine.processor.workflow.instance.CreateWorkflowInstanceWithResultProcessor;
@@ -26,6 +28,7 @@ import io.zeebe.engine.state.instance.ElementInstanceState;
 import io.zeebe.engine.state.instance.VariablesState;
 import io.zeebe.engine.state.instance.WorkflowEngineState;
 import io.zeebe.engine.state.message.WorkflowInstanceSubscriptionState;
+import io.zeebe.protocol.impl.record.value.workflowinstance.WorkflowInstanceRecord;
 import io.zeebe.protocol.record.ValueType;
 import io.zeebe.protocol.record.intent.TimerIntent;
 import io.zeebe.protocol.record.intent.VariableDocumentIntent;
@@ -44,7 +47,7 @@ public final class WorkflowEventProcessors {
     return !WORKFLOW_INSTANCE_COMMANDS.contains(intent);
   }
 
-  public static BpmnStepProcessor addWorkflowProcessors(
+  public static TypedRecordProcessor<WorkflowInstanceRecord> addWorkflowProcessors(
       final ZeebeState zeebeState,
       final ExpressionProcessor expressionProcessor,
       final TypedRecordProcessors typedRecordProcessors,
@@ -60,10 +63,9 @@ public final class WorkflowEventProcessors {
 
     addWorkflowInstanceCommandProcessor(typedRecordProcessors, workflowEngineState, zeebeState);
 
-    final BpmnStepProcessor bpmnStepProcessor =
-        new BpmnStepProcessor(
-            workflowEngineState, zeebeState, expressionProcessor, catchEventBehavior);
-    addBpmnStepProcessor(typedRecordProcessors, bpmnStepProcessor);
+    final var bpmnStreamProcessor =
+        new BpmnStreamProcessor(expressionProcessor, catchEventBehavior, zeebeState);
+    addBpmnStepProcessor(typedRecordProcessors, bpmnStreamProcessor);
 
     addMessageStreamProcessors(
         typedRecordProcessors, subscriptionState, subscriptionCommandSender, zeebeState);
@@ -72,7 +74,7 @@ public final class WorkflowEventProcessors {
     addVariableDocumentStreamProcessors(typedRecordProcessors, zeebeState);
     addWorkflowInstanceCreationStreamProcessors(typedRecordProcessors, zeebeState);
 
-    return bpmnStepProcessor;
+    return bpmnStreamProcessor;
   }
 
   private static void addWorkflowInstanceCommandProcessor(
@@ -90,7 +92,7 @@ public final class WorkflowEventProcessors {
 
   private static void addBpmnStepProcessor(
       final TypedRecordProcessors typedRecordProcessors,
-      final BpmnStepProcessor bpmnStepProcessor) {
+      final BpmnStreamProcessor bpmnStepProcessor) {
 
     Arrays.stream(WorkflowInstanceIntent.values())
         .filter(WorkflowEventProcessors::isWorkflowInstanceEvent)

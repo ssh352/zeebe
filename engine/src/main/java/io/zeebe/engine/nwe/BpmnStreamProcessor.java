@@ -16,12 +16,10 @@ import io.zeebe.engine.processor.TypedRecord;
 import io.zeebe.engine.processor.TypedRecordProcessor;
 import io.zeebe.engine.processor.TypedResponseWriter;
 import io.zeebe.engine.processor.TypedStreamWriter;
-import io.zeebe.engine.processor.workflow.BpmnStepContext;
 import io.zeebe.engine.processor.workflow.CatchEventBehavior;
 import io.zeebe.engine.processor.workflow.ExpressionProcessor;
 import io.zeebe.engine.processor.workflow.SideEffectQueue;
 import io.zeebe.engine.processor.workflow.deployment.model.element.ExecutableFlowElement;
-import io.zeebe.engine.processor.workflow.deployment.model.element.ExecutableMultiInstanceBody;
 import io.zeebe.engine.state.ZeebeState;
 import io.zeebe.engine.state.deployment.WorkflowState;
 import io.zeebe.protocol.impl.record.value.workflowinstance.WorkflowInstanceRecord;
@@ -43,13 +41,10 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
   private final BpmnElementProcessors processors;
   private final WorkflowInstanceStateTransitionGuard stateTransitionGuard;
 
-  private final Consumer<BpmnStepContext<?>> fallback;
-
   public BpmnStreamProcessor(
       final ExpressionProcessor expressionProcessor,
       final CatchEventBehavior catchEventBehavior,
-      final ZeebeState zeebeState,
-      final Consumer<BpmnStepContext<?>> fallback) {
+      final ZeebeState zeebeState) {
     workflowState = zeebeState.getWorkflowState();
     context = new BpmnElementContextImpl(zeebeState);
 
@@ -63,7 +58,6 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
             this::getContainerProcessor);
     processors = new BpmnElementProcessors(bpmnBehaviors);
 
-    this.fallback = fallback;
     stateTransitionGuard = bpmnBehaviors.stateTransitionGuard();
   }
 
@@ -87,38 +81,18 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
     final var intent = (WorkflowInstanceIntent) record.getIntent();
     final var recordValue = record.getValue();
     final var bpmnElementType = recordValue.getBpmnElementType();
+
     final var processor = processors.getProcessor(bpmnElementType);
-
-    if (processor == null) {
-      // TODO (saig0): remove multi-instance fallback when the processors of all multi-instance
-      // elements are migrated
-      LOGGER.trace("[NEW] No processor found for BPMN element type '{}'", bpmnElementType);
-
-      final var multiInstanceBody =
-          workflowState.getFlowElement(
-              recordValue.getWorkflowKey(),
-              recordValue.getElementIdBuffer(),
-              ExecutableMultiInstanceBody.class);
-
-      final var element = multiInstanceBody.getInnerActivity();
-      context.init(record, intent, element, streamWriterProxy, sideEffectQueue);
-
-      fallback.accept(context.toStepContext());
-      return;
-    }
-
-    LOGGER.trace(
-        "[NEW] process workflow instance event [BPMN element type: {}, intent: {}]",
-        bpmnElementType,
-        intent);
-
     final ExecutableFlowElement element = getElement(recordValue, processor);
 
     // initialize the stuff
+    // TODO (saig0): init less stuff
     context.init(record, intent, element, streamWriterProxy, sideEffectQueue);
 
     // process the event
     if (stateTransitionGuard.isValidStateTransition(context)) {
+      LOGGER.trace("Process workflow instance event [context: {}]", context);
+
       processEvent(intent, processor, element);
     }
   }

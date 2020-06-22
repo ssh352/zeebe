@@ -67,8 +67,8 @@ public final class BpmnElementProcessors {
 
     final var processor = (BpmnElementProcessor<T>) processors.get(bpmnElementType);
     if (processor == null) {
-      //      throw new UnsupportedOperationException(
-      //          String.format("no processor found for BPMN element type '%s'", bpmnElementType));
+      throw new UnsupportedOperationException(
+          String.format("no processor found for BPMN element type '%s'", bpmnElementType));
     }
     return processor;
   }

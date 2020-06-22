@@ -13,7 +13,6 @@ import io.zeebe.engine.processor.TypedRecord;
 import io.zeebe.engine.processor.TypedRecordProcessor;
 import io.zeebe.engine.processor.TypedResponseWriter;
 import io.zeebe.engine.processor.TypedStreamWriter;
-import io.zeebe.engine.processor.workflow.BpmnStepProcessor;
 import io.zeebe.engine.processor.workflow.SideEffectQueue;
 import io.zeebe.engine.processor.workflow.job.JobErrorThrownProcessor;
 import io.zeebe.engine.state.ZeebeState;
@@ -37,14 +36,14 @@ public final class ResolveIncidentProcessor implements TypedRecordProcessor<Inci
   private final TypedResponseWriter noopResponseWriter = new NoopResponseWriter();
 
   private final ZeebeState zeebeState;
-  private final BpmnStepProcessor stepProcessor;
+  private final TypedRecordProcessor<WorkflowInstanceRecord> bpmnStreamProcessor;
   private final JobErrorThrownProcessor jobErrorThrownProcessor;
 
   public ResolveIncidentProcessor(
       final ZeebeState zeebeState,
-      final BpmnStepProcessor stepProcessor,
+      final TypedRecordProcessor<WorkflowInstanceRecord> bpmnStreamProcessor,
       final JobErrorThrownProcessor jobErrorThrownProcessor) {
-    this.stepProcessor = stepProcessor;
+    this.bpmnStreamProcessor = bpmnStreamProcessor;
     this.zeebeState = zeebeState;
     this.jobErrorThrownProcessor = jobErrorThrownProcessor;
   }
@@ -109,19 +108,8 @@ public final class ResolveIncidentProcessor implements TypedRecordProcessor<Inci
         zeebeState.getWorkflowState().getElementInstanceState().getFailedRecord(elementInstanceKey);
 
     if (failedRecord != null) {
-
-      queue.clear();
-      queue.add(responseWriter::flush);
-      stepProcessor.processRecordValue(
-          createRecord(failedRecord),
-          failedRecord.getKey(),
-          failedRecord.getValue(),
-          failedRecord.getState(),
-          streamWriter,
-          noopResponseWriter,
-          queue::add);
-
-      sideEffect.accept(queue);
+      bpmnStreamProcessor.processRecord(
+          createRecord(failedRecord), noopResponseWriter, streamWriter, sideEffect);
     }
   }
 
