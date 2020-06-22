@@ -8,6 +8,7 @@
 package io.zeebe.broker.it.health;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import io.zeebe.broker.it.util.GrpcClientRule;
 import io.zeebe.broker.system.monitoring.DiskSpaceUsageListener;
@@ -78,11 +79,10 @@ public class DiskSpaceRecoveryTest {
             .newPublishMessageCommand()
             .messageName("test")
             .correlationKey("Test")
-            .send()
-            .join();
+            .send();
 
     // then
-    assertThat(resultFuture).isNotNull();
+    assertThatCode(resultFuture::join).doesNotThrowAnyException();
   }
 
   @Test
@@ -167,7 +167,7 @@ public class DiskSpaceRecoveryTest {
 
     assertThat(jobs).isNotEmpty();
 
-    final var jobKey = jobs.get(0).getKey();
+    final var jobKey = jobs.get(0).getElementInstanceKey();
 
     // when
     waitUntilDiskSpaceNotAvailable();

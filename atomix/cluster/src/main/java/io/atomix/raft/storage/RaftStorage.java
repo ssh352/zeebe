@@ -400,7 +400,7 @@ public final class RaftStorage {
     private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 1024; // 1MB
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
-    private static final long DEFAULT_FREE_DISK_BUFFER = 1024 * 1024 * 1024 * 4;
+    private static final long DEFAULT_FREE_DISK_BUFFER = 1024L * 1024 * 1024; // 1GB
     private static final double DEFAULT_FREE_MEMORY_BUFFER = .2;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = true;
     private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
