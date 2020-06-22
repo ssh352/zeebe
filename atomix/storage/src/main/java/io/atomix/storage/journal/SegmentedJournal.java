@@ -815,6 +815,13 @@ public class SegmentedJournal<E> implements Journal<E> {
       return this;
     }
 
+    /**
+     * Sets the minimum free disk space to leave when allocating a new segment
+     *
+     * @param freeDiskBuffer free disk space in bytes
+     * @return the storage builder
+     * @throws IllegalArgumentException if the {@code freeDiskBuffer} is not positive
+     */
     public Builder<E> withFreeDiskBuffer(final long freeDiskBuffer) {
       checkArgument(freeDiskBuffer > 0, "minFreeDiskSpace must be positive");
       this.freeDiskBuffer = freeDiskBuffer;

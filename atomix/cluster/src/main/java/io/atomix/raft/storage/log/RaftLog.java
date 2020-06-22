@@ -215,6 +215,13 @@ public class RaftLog extends DelegatingJournal<RaftLogEntry> {
       return this;
     }
 
+    /**
+     * Sets the minimum free disk space to leave when allocating a new segment
+     *
+     * @param freeDiskBuffer free disk space in bytes
+     * @return the storage builder
+     * @throws IllegalArgumentException if the {@code freeDiskBuffer} is not positive
+     */
     public Builder withFreeDiskBuffer(final long freeDiskBuffer) {
       journalBuilder.withFreeDiskBuffer(freeDiskBuffer);
       return this;

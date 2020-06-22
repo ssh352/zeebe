@@ -171,11 +171,23 @@ public class RaftStorageConfig {
     return this;
   }
 
+  /**
+   * Returns the minimum free disk space buffer to leave when allocating a new segment
+   *
+   * @return free disk buffer
+   */
   public long getFreeDiskBuffer() {
     return this.freeDiskBuffer;
   }
 
-  public void setFreeDiskBuffer(final long freeDiskBuffer) {
+  /**
+   * Sets the minimum free disk space buffer
+   *
+   * @param freeDiskBuffer
+   * @return
+   */
+  public RaftStorageConfig setFreeDiskBuffer(final long freeDiskBuffer) {
     this.freeDiskBuffer = freeDiskBuffer;
+    return this;
   }
 }
