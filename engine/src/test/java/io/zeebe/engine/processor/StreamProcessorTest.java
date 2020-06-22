@@ -622,48 +622,6 @@ public final class StreamProcessorTest {
   }
 
   @Test
-  public void shouldNotProcessMoreRecordsWhenPaused() throws InterruptedException {
-    // given
-    final CountDownLatch pauseLatch = new CountDownLatch(1);
-    final CountDownLatch resumeLatch = new CountDownLatch(1);
-    final TypedRecordProcessor<?> typedRecordProcessor = mock(TypedRecordProcessor.class);
-    final StreamProcessor streamProcessor =
-        streamProcessorRule.startTypedStreamProcessor(
-            (processors, state) ->
-                processors
-                    .onEvent(
-                        ValueType.WORKFLOW_INSTANCE,
-                        WorkflowInstanceIntent.ELEMENT_ACTIVATING,
-                        typedRecordProcessor)
-                    .withListener(
-                        new StreamProcessorLifecycleAware() {
-                          @Override
-                          public void onPaused() {
-                            pauseLatch.countDown();
-                          }
-
-                          @Override
-                          public void onResumed() {
-                            resumeLatch.countDown();
-                          }
-                        }));
-
-    final long positionProcessed =
-        streamProcessorRule.writeWorkflowInstanceEvent(WorkflowInstanceIntent.ELEMENT_ACTIVATING);
-
-    // when
-    streamProcessor.pauseProcessing();
-    pauseLatch.await();
-
-    streamProcessorRule.writeWorkflowInstanceEvent(WorkflowInstanceIntent.ELEMENT_ACTIVATING);
-
-    // then
-    Assertions.assertThat(
-            streamProcessorRule.getZeebeState().getLastSuccessfulProcessedRecordPosition())
-        .isEqualTo(positionProcessed);
-  }
-
-  @Test
   public void shouldResumeProcessMoreRecordsAfterPause() throws InterruptedException {
     // given
     final var onProcessedListener = new AwaitableProcessedListener();
