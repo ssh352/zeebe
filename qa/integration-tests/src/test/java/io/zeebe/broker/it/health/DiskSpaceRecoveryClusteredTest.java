@@ -43,8 +43,7 @@ public class DiskSpaceRecoveryClusteredTest {
           1,
           3,
           cfg -> {
-            cfg.getData().setDiskUsageCheckDelay(Duration.ofSeconds(1));
-            cfg.getData().setHighFreeDiskSpaceWatermark(DataSize.ofGigabytes(4));
+            cfg.getData().setDiskUsageMonitoringInterval(Duration.ofSeconds(1));
           });
   private final GrpcClientRule clientRule = new GrpcClientRule(clusteringRule);
 
@@ -75,7 +74,7 @@ public class DiskSpaceRecoveryClusteredTest {
     clientRule.waitUntilDeploymentIsDone(deploymentKey);
   }
 
-  @Ignore("Apparently a message correlation is not retried if failed")
+  @Ignore("https://github.com/zeebe-io/zeebe/issues/4786")
   @Test
   public void shouldCorrelateMessageAfterDiskSpaceAvailableAgain() throws InterruptedException {
     // given
@@ -170,15 +169,15 @@ public class DiskSpaceRecoveryClusteredTest {
     diskSpaceMonitor.addDiskUsageListener(
         new DiskSpaceUsageListener() {
           @Override
-          public void onDiskSpaceUsageIncreasedAboveThreshold() {
+          public void onDiskSpaceNotAvailable() {
             diskSpaceNotAvailable.countDown();
           }
 
           @Override
-          public void onDiskSpaceUsageReducedBelowThreshold() {}
+          public void onDiskSpaceAvailable() {}
         });
 
-    diskSpaceMonitor.setDiskSpaceSupplier(() -> DataSize.ofGigabytes(1).toBytes());
+    diskSpaceMonitor.setFreeDiskSpaceSupplier(() -> DataSize.ofGigabytes(0).toBytes());
 
     clusteringRule.getClock().addTime(Duration.ofSeconds(1));
 
@@ -192,12 +191,12 @@ public class DiskSpaceRecoveryClusteredTest {
     diskSpaceMonitor.addDiskUsageListener(
         new DiskSpaceUsageListener() {
           @Override
-          public void onDiskSpaceUsageReducedBelowThreshold() {
+          public void onDiskSpaceAvailable() {
             diskSpaceAvailableAgain.countDown();
           }
         });
 
-    diskSpaceMonitor.setDiskSpaceSupplier(() -> DataSize.ofGigabytes(10).toBytes());
+    diskSpaceMonitor.setFreeDiskSpaceSupplier(() -> DataSize.ofGigabytes(100).toBytes());
     clusteringRule.getClock().addTime(Duration.ofSeconds(1));
     assertThat(diskSpaceAvailableAgain.await(2, TimeUnit.SECONDS)).isTrue();
   }

@@ -9,7 +9,9 @@ package io.zeebe.broker.system.configuration;
 
 import static io.zeebe.util.StringUtil.LIST_SANITIZER;
 
+import com.google.common.base.Preconditions;
 import io.atomix.storage.StorageLevel;
+import java.io.File;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -19,9 +21,9 @@ import org.springframework.util.unit.DataSize;
 public final class DataCfg implements ConfigurationEntry {
   public static final String DEFAULT_DIRECTORY = "data";
   private static final DataSize DEFAULT_DATA_SIZE = DataSize.ofMegabytes(512);
-  private static final DataSize DEFAULT_LOW_FREE_DISKSPACE_WATERMARK = DataSize.ofGigabytes(1);
-  private static final DataSize DEFAULT_HIGH_FREE_DISKSPACE_WATERMARK = DataSize.ofGigabytes(2);
-  private static final Duration DEFAULT_DISK_USAGE_MONITORING_DELAY = Duration.ofSeconds(10);
+  private static final double DEFAULT_DISK_USAGE_REPLICATION_WATERMARK = 0.9;
+  private static final double DEFAULT_DISK_USAGE_COMMAND_WATERMARK = 0.8;
+  private static final Duration DEFAULT_DISK_USAGE_MONITORING_DELAY = Duration.ofSeconds(1);
 
   // Hint: do not use Collections.singletonList as this does not support replaceAll
   private List<String> directories = Arrays.asList(DEFAULT_DIRECTORY);
@@ -33,13 +35,12 @@ public final class DataCfg implements ConfigurationEntry {
   private int logIndexDensity = 100;
 
   private boolean useMmap = false;
-  private DataSize lowFreeDiskSpaceWatermark = DEFAULT_LOW_FREE_DISKSPACE_WATERMARK;
-  private DataSize highFreeDiskSpaceWatermark = DEFAULT_HIGH_FREE_DISKSPACE_WATERMARK;
-  private Duration diskUsageCheckDelay = DEFAULT_DISK_USAGE_MONITORING_DELAY;
+  private double diskUsageReplicationWatermark = DEFAULT_DISK_USAGE_REPLICATION_WATERMARK;
+  private double diskUsageCommandWatermark = DEFAULT_DISK_USAGE_COMMAND_WATERMARK;
+  private Duration diskUsageMonitoringInterval = DEFAULT_DISK_USAGE_MONITORING_DELAY;
 
   @Override
   public void init(final BrokerCfg globalConfig, final String brokerBase) {
-
     directories.replaceAll(d -> ConfigurationUtil.toAbsolutePath(d, brokerBase));
   }
 
@@ -91,40 +92,46 @@ public final class DataCfg implements ConfigurationEntry {
     return useMmap() ? StorageLevel.MAPPED : StorageLevel.DISK;
   }
 
-  public DataSize getHighFreeDiskSpaceWatermark() {
-    return highFreeDiskSpaceWatermark;
+  public double getDiskUsageCommandWatermark() {
+    return diskUsageCommandWatermark;
   }
 
-  public void setHighFreeDiskSpaceWatermark(final DataSize highFreeDiskSpaceWatermark) {
-    this.highFreeDiskSpaceWatermark = highFreeDiskSpaceWatermark;
+  public void setDiskUsageCommandWatermark(final double diskUsageCommandWatermark) {
+    Preconditions.checkArgument(
+        diskUsageCommandWatermark > 0 && diskUsageCommandWatermark < 1,
+        "Expected diskUsageCommandWatermark to be in the range (0,1), but found %d",
+        diskUsageCommandWatermark);
+    this.diskUsageCommandWatermark = diskUsageCommandWatermark;
   }
 
-  public long getHighFreeDiskSpaceWatermarkInBytes() {
-    return Optional.ofNullable(highFreeDiskSpaceWatermark)
-        .orElse(DEFAULT_HIGH_FREE_DISKSPACE_WATERMARK)
-        .toBytes();
+  public long getFreeDiskSpaceCommandWatermark() {
+    final var directory = new File(getDirectories().get(0));
+    return Math.round(directory.getTotalSpace() * (1 - diskUsageCommandWatermark));
   }
 
-  public DataSize getLowFreeDiskSpaceWatermark() {
-    return this.lowFreeDiskSpaceWatermark;
+  public double getDiskUsageReplicationWatermark() {
+    return this.diskUsageReplicationWatermark;
   }
 
-  public void setLowFreeDiskSpaceWatermark(final DataSize lowFreeDiskSpaceWatermark) {
-    this.lowFreeDiskSpaceWatermark = lowFreeDiskSpaceWatermark;
+  public void setDiskUsageReplicationWatermark(final double diskUsageReplicationWatermark) {
+    Preconditions.checkArgument(
+        diskUsageReplicationWatermark > 0 && diskUsageReplicationWatermark < 1,
+        "Expected diskUsageReplicationWatermark to be in the range (0,1), but found %d",
+        diskUsageReplicationWatermark);
+    this.diskUsageReplicationWatermark = diskUsageReplicationWatermark;
   }
 
-  public Duration getDiskUsageCheckDelay() {
-    return diskUsageCheckDelay;
+  public long getFreeDiskSpaceReplicationWatermark() {
+    final var directory = new File(getDirectories().get(0));
+    return Math.round(directory.getTotalSpace() * (1 - diskUsageReplicationWatermark));
   }
 
-  public void setDiskUsageCheckDelay(final Duration diskUsageCheckDelay) {
-    this.diskUsageCheckDelay = diskUsageCheckDelay;
+  public Duration getDiskUsageMonitoringInterval() {
+    return diskUsageMonitoringInterval;
   }
 
-  public long getLowFreeDiskSpaceWatermarkInBytes() {
-    return Optional.ofNullable(lowFreeDiskSpaceWatermark)
-        .orElse(DEFAULT_LOW_FREE_DISKSPACE_WATERMARK)
-        .toBytes();
+  public void setDiskUsageMonitoringInterval(final Duration diskUsageMonitoringInterval) {
+    this.diskUsageMonitoringInterval = diskUsageMonitoringInterval;
   }
 
   @Override
@@ -132,16 +139,20 @@ public final class DataCfg implements ConfigurationEntry {
     return "DataCfg{"
         + "directories="
         + directories
-        + ", logSegmentSize='"
+        + ", logSegmentSize="
         + logSegmentSize
-        + '\''
-        + ", snapshotPeriod='"
+        + ", snapshotPeriod="
         + snapshotPeriod
-        + '\''
         + ", logIndexDensity="
         + logIndexDensity
         + ", useMmap="
         + useMmap
+        + ", diskUsageReplicationWatermark="
+        + diskUsageReplicationWatermark
+        + ", diskUsageCommandWatermark="
+        + diskUsageCommandWatermark
+        + ", diskUsageMonitoringInterval="
+        + diskUsageMonitoringInterval
         + '}';
   }
 }

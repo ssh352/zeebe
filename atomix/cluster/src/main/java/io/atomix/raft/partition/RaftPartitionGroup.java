@@ -444,11 +444,11 @@ public class RaftPartitionGroup implements ManagedPartitionGroup {
     /**
      * Set the minimum free disk space (in bytes) to leave when allocating a new segment
      *
-     * @param freeDiskBuffer free disk space in bytes
+     * @param freeDiskSpace free disk space in bytes
      * @return the Raft partition group builder
      */
-    public Builder withFreeDiskBuffer(final long freeDiskBuffer) {
-      config.getStorageConfig().setFreeDiskBuffer(freeDiskBuffer);
+    public Builder withFreeDiskSpace(final long freeDiskSpace) {
+      config.getStorageConfig().setFreeDiskSpace(freeDiskSpace);
       return this;
     }
 

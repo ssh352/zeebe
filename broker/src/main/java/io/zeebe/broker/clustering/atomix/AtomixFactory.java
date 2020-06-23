@@ -105,7 +105,7 @@ public final class AtomixFactory {
             .withStorageLevel(dataCfg.getAtomixStorageLevel())
             .withEntryValidator(new ZeebeEntryValidator())
             .withFlushOnCommit()
-            .withFreeDiskBuffer(dataCfg.getLowFreeDiskSpaceWatermarkInBytes());
+            .withFreeDiskSpace(dataCfg.getFreeDiskSpaceReplicationWatermark());
 
     // by default, the Atomix max entry size is 1 MB
     final int maxMessageSize = (int) networkCfg.getMaxMessageSizeInBytes();

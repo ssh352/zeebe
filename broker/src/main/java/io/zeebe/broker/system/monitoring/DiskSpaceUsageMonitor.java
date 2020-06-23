@@ -21,15 +21,15 @@ public class DiskSpaceUsageMonitor extends Actor {
 
   private final List<DiskSpaceUsageListener> diskSpaceUsageListeners = new ArrayList<>();
   private boolean currentDiskAvailableStatus = true;
-  private LongSupplier diskSpaceSupplier;
+  private LongSupplier freeDiskSpaceSupplier;
   private final Duration monitoringDelay;
-  private final long minFreeDiskRequired;
+  private final long minFreeDiskSpaceRequired;
 
   public DiskSpaceUsageMonitor(final DataCfg dataCfg) {
-    this.monitoringDelay = dataCfg.getDiskUsageCheckDelay();
-    this.minFreeDiskRequired = dataCfg.getHighFreeDiskSpaceWatermarkInBytes();
+    this.monitoringDelay = dataCfg.getDiskUsageMonitoringInterval();
+    this.minFreeDiskSpaceRequired = dataCfg.getFreeDiskSpaceCommandWatermark();
     final var directory = new File(dataCfg.getDirectories().get(0));
-    diskSpaceSupplier = directory::getUsableSpace;
+    freeDiskSpaceSupplier = directory::getUsableSpace;
   }
 
   @Override
@@ -38,21 +38,19 @@ public class DiskSpaceUsageMonitor extends Actor {
   }
 
   private void checkDiskUsageAndNotifyListeners() {
-    final long diskSpaceUsage = diskSpaceSupplier.getAsLong();
+    final long freeDiskSpaceAvailable = freeDiskSpaceSupplier.getAsLong();
     final boolean previousStatus = currentDiskAvailableStatus;
-    currentDiskAvailableStatus = diskSpaceUsage >= minFreeDiskRequired;
+    currentDiskAvailableStatus = freeDiskSpaceAvailable >= minFreeDiskSpaceRequired;
     if (currentDiskAvailableStatus != previousStatus) {
       if (!currentDiskAvailableStatus) {
-        LOG.debug(
+        LOG.warn(
             "Out of disk space. Current available {} bytes. Minimum needed {} bytes.",
-            diskSpaceUsage,
-            minFreeDiskRequired);
-        diskSpaceUsageListeners.forEach(
-            DiskSpaceUsageListener::onDiskSpaceUsageIncreasedAboveThreshold);
+            freeDiskSpaceAvailable,
+            minFreeDiskSpaceRequired);
+        diskSpaceUsageListeners.forEach(DiskSpaceUsageListener::onDiskSpaceNotAvailable);
       } else {
-        LOG.debug("Disk space available again. Current available {} bytes", diskSpaceUsage);
-        diskSpaceUsageListeners.forEach(
-            DiskSpaceUsageListener::onDiskSpaceUsageReducedBelowThreshold);
+        LOG.info("Disk space available again. Current available {} bytes", freeDiskSpaceAvailable);
+        diskSpaceUsageListeners.forEach(DiskSpaceUsageListener::onDiskSpaceAvailable);
       }
     }
   }
@@ -66,7 +64,7 @@ public class DiskSpaceUsageMonitor extends Actor {
   }
 
   // Used only for testing
-  public void setDiskSpaceSupplier(final LongSupplier diskSpaceSupplier) {
-    this.diskSpaceSupplier = diskSpaceSupplier;
+  public void setFreeDiskSpaceSupplier(final LongSupplier freeDiskSpaceSupplier) {
+    this.freeDiskSpaceSupplier = freeDiskSpaceSupplier;
   }
 }

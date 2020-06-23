@@ -9,7 +9,7 @@ package io.zeebe.broker.system.monitoring;
 
 public interface DiskSpaceUsageListener {
 
-  default void onDiskSpaceUsageIncreasedAboveThreshold() {}
+  default void onDiskSpaceNotAvailable() {}
 
-  default void onDiskSpaceUsageReducedBelowThreshold() {}
+  default void onDiskSpaceAvailable() {}
 }

@@ -466,7 +466,7 @@ public final class RaftRule extends ExternalResource {
             .withDirectory(memberDirectory)
             .withMaxEntriesPerSegment(10)
             .withMaxSegmentSize(1024 * 10)
-            .withFreeDiskBuffer(100)
+            .withFreeDiskSpace(100)
             .withSnapshotStore(
                 new FileBasedSnapshotStoreFactory()
                     .createSnapshotStore(memberDirectory.toPath(), "1"))

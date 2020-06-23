@@ -121,12 +121,12 @@ public final class CommandApiService extends Actor
   }
 
   @Override
-  public void onDiskSpaceUsageIncreasedAboveThreshold() {
-    actor.run(requestHandler::onDiskUsageAboveThreshold);
+  public void onDiskSpaceNotAvailable() {
+    actor.run(requestHandler::onDiskSpaceNotAvailable);
   }
 
   @Override
-  public void onDiskSpaceUsageReducedBelowThreshold() {
-    actor.run(requestHandler::onDiskUsageBelowThreshold);
+  public void onDiskSpaceAvailable() {
+    actor.run(requestHandler::onDiskSpaceAvailable);
   }
 }

@@ -60,7 +60,7 @@ public class RaftStorageTest {
             .withMaxSegmentSize(1024 * 1024)
             .withMaxEntriesPerSegment(1024)
             .withDynamicCompaction(false)
-            .withFreeDiskBuffer(100)
+            .withFreeDiskSpace(100)
             .withFlushOnCommit(false)
             .withRetainStaleSnapshots()
             .build();

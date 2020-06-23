@@ -218,15 +218,15 @@ final class CommandApiRequestHandler implements RequestHandler {
         });
   }
 
-  void onDiskUsageAboveThreshold() {
+  void onDiskSpaceNotAvailable() {
     cmdQueue.add(
         () -> {
           this.isDiskSpaceAvailable = false;
-          LOG.warn("Broker is out of disk space. All client requests will be rejected");
+          LOG.debug("Broker is out of disk space. All client requests will be rejected");
         });
   }
 
-  void onDiskUsageBelowThreshold() {
+  void onDiskSpaceAvailable() {
     cmdQueue.add(
         () -> {
           this.isDiskSpaceAvailable = true;

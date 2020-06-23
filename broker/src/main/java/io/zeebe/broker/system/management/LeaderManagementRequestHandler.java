@@ -100,10 +100,10 @@ public final class LeaderManagementRequestHandler extends Actor
   }
 
   @Override
-  public void onDiskSpaceUsageIncreasedAboveThreshold() {
+  public void onDiskSpaceNotAvailable() {
     actor.call(
         () -> {
-          LOG.warn(
+          LOG.debug(
               "Broker is out of disk space. All requests with topic {} will be rejected.",
               DEPLOYMENT_TOPIC);
           atomix.getCommunicationService().unsubscribe(DEPLOYMENT_TOPIC);
@@ -116,10 +116,10 @@ public final class LeaderManagementRequestHandler extends Actor
   }
 
   @Override
-  public void onDiskSpaceUsageReducedBelowThreshold() {
+  public void onDiskSpaceAvailable() {
     actor.call(
         () -> {
-          LOG.warn(
+          LOG.debug(
               "Broker has disk space available again. All requests with topic {} will be accepted.",
               DEPLOYMENT_TOPIC);
           atomix.getCommunicationService().unsubscribe(DEPLOYMENT_TOPIC);

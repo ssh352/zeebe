@@ -36,8 +36,7 @@ public class DiskSpaceRecoveryTest {
   private final EmbeddedBrokerRule embeddedBrokerRule =
       new EmbeddedBrokerRule(
           cfg -> {
-            cfg.getData().setDiskUsageCheckDelay(Duration.ofSeconds(1));
-            cfg.getData().setHighFreeDiskSpaceWatermark(DataSize.ofGigabytes(4));
+            cfg.getData().setDiskUsageMonitoringInterval(Duration.ofSeconds(1));
           });
   private final GrpcClientRule clientRule = new GrpcClientRule(embeddedBrokerRule);
 
@@ -197,15 +196,15 @@ public class DiskSpaceRecoveryTest {
     diskSpaceMonitor.addDiskUsageListener(
         new DiskSpaceUsageListener() {
           @Override
-          public void onDiskSpaceUsageIncreasedAboveThreshold() {
+          public void onDiskSpaceNotAvailable() {
             diskSpaceNotAvailable.countDown();
           }
 
           @Override
-          public void onDiskSpaceUsageReducedBelowThreshold() {}
+          public void onDiskSpaceAvailable() {}
         });
 
-    diskSpaceMonitor.setDiskSpaceSupplier(() -> DataSize.ofGigabytes(1).toBytes());
+    diskSpaceMonitor.setFreeDiskSpaceSupplier(() -> DataSize.ofGigabytes(0).toBytes());
 
     embeddedBrokerRule.getClock().addTime(Duration.ofSeconds(1));
 
@@ -219,12 +218,12 @@ public class DiskSpaceRecoveryTest {
     diskSpaceMonitor.addDiskUsageListener(
         new DiskSpaceUsageListener() {
           @Override
-          public void onDiskSpaceUsageReducedBelowThreshold() {
+          public void onDiskSpaceAvailable() {
             diskSpaceAvailableAgain.countDown();
           }
         });
 
-    diskSpaceMonitor.setDiskSpaceSupplier(() -> DataSize.ofGigabytes(10).toBytes());
+    diskSpaceMonitor.setFreeDiskSpaceSupplier(() -> DataSize.ofGigabytes(100).toBytes());
     embeddedBrokerRule.getClock().addTime(Duration.ofSeconds(1));
     assertThat(diskSpaceAvailableAgain.await(2, TimeUnit.SECONDS)).isTrue();
   }
