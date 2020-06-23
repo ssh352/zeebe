@@ -16,6 +16,7 @@ import io.zeebe.engine.processor.KeyGenerator;
 import io.zeebe.engine.processor.TypedStreamWriter;
 import io.zeebe.engine.processor.workflow.CatchEventBehavior;
 import io.zeebe.engine.processor.workflow.ExpressionProcessor.EvaluationException;
+import io.zeebe.engine.processor.workflow.SideEffects;
 import io.zeebe.engine.processor.workflow.deployment.model.element.ExecutableActivity;
 import io.zeebe.engine.processor.workflow.deployment.model.element.ExecutableBoundaryEvent;
 import io.zeebe.engine.processor.workflow.deployment.model.element.ExecutableCatchEventSupplier;
@@ -57,7 +58,10 @@ public final class BpmnEventSubscriptionBehavior {
   private final EventScopeInstanceState eventScopeInstanceState;
   private final ElementInstanceState elementInstanceState;
   private final CatchEventBehavior catchEventBehavior;
+
   private final TypedStreamWriter streamWriter;
+  private final SideEffects sideEffects;
+
   private final KeyGenerator keyGenerator;
   private final WorkflowState workflowState;
   private final VariablesState variablesState;
@@ -67,11 +71,13 @@ public final class BpmnEventSubscriptionBehavior {
       final BpmnStateTransitionBehavior stateTransitionBehavior,
       final CatchEventBehavior catchEventBehavior,
       final TypedStreamWriter streamWriter,
+      final SideEffects sideEffects,
       final ZeebeState zeebeState) {
     this.stateBehavior = stateBehavior;
     this.stateTransitionBehavior = stateTransitionBehavior;
     this.catchEventBehavior = catchEventBehavior;
     this.streamWriter = streamWriter;
+    this.sideEffects = sideEffects;
 
     workflowState = zeebeState.getWorkflowState();
     eventScopeInstanceState = workflowState.getEventScopeInstanceState();
@@ -353,19 +359,17 @@ public final class BpmnEventSubscriptionBehavior {
     return deferredStartEvent.isPresent();
   }
 
+  // TODO (saig0): thing about extracting this
   public <T extends ExecutableCatchEventSupplier> Either<Failure, Void> subscribeToEvents(
       final T element, final BpmnElementContext context) {
 
     try {
-      catchEventBehavior.subscribeToEvents(context.toStepContext(), element);
+      catchEventBehavior.subscribeToEvents(context, element, streamWriter, sideEffects);
       return Either.right(null);
 
     } catch (final MessageCorrelationKeyException e) {
       return Either.left(
-          new Failure(
-              e.getMessage(),
-              ErrorType.EXTRACT_VALUE_ERROR,
-              e.getContext().getVariablesScopeKey()));
+          new Failure(e.getMessage(), ErrorType.EXTRACT_VALUE_ERROR, e.getVariableScopeKey()));
 
     } catch (final EvaluationException e) {
       return Either.left(
@@ -377,8 +381,7 @@ public final class BpmnEventSubscriptionBehavior {
   }
 
   public void unsubscribeFromEvents(final BpmnElementContext context) {
-    catchEventBehavior.unsubscribeFromEvents(
-        context.getElementInstanceKey(), context.toStepContext());
+    catchEventBehavior.unsubscribeFromEvents(context, streamWriter, sideEffects);
   }
 
   public void triggerEventSubProcess(

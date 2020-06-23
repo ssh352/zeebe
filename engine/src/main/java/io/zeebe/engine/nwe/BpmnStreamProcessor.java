@@ -53,6 +53,7 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
             expressionProcessor,
             streamWriterProxy,
             responseWriterProxy,
+            sideEffectQueue,
             zeebeState,
             catchEventBehavior,
             this::getContainerProcessor);
