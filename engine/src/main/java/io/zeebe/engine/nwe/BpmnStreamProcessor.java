@@ -35,8 +35,8 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
   private final TypedStreamWriterProxy streamWriterProxy = new TypedStreamWriterProxy();
   private final TypedResponseWriterProxy responseWriterProxy = new TypedResponseWriterProxy();
   private final SideEffectQueue sideEffectQueue = new SideEffectQueue();
+  private final BpmnElementContextImpl context = new BpmnElementContextImpl();
 
-  private final BpmnElementContextImpl context;
   private final WorkflowState workflowState;
   private final BpmnElementProcessors processors;
   private final WorkflowInstanceStateTransitionGuard stateTransitionGuard;
@@ -46,7 +46,6 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
       final CatchEventBehavior catchEventBehavior,
       final ZeebeState zeebeState) {
     workflowState = zeebeState.getWorkflowState();
-    context = new BpmnElementContextImpl(zeebeState);
 
     final var bpmnBehaviors =
         new BpmnBehaviorsImpl(
@@ -74,21 +73,21 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
       final TypedStreamWriter streamWriter,
       final Consumer<SideEffectProducer> sideEffect) {
 
+    // initialize
     streamWriterProxy.wrap(streamWriter);
     responseWriterProxy.wrap(responseWriter, writer -> sideEffectQueue.add(writer::flush));
     sideEffectQueue.clear();
     sideEffect.accept(sideEffectQueue);
 
     final var intent = (WorkflowInstanceIntent) record.getIntent();
+
+    context.init(record, intent);
+
     final var recordValue = record.getValue();
     final var bpmnElementType = recordValue.getBpmnElementType();
 
     final var processor = processors.getProcessor(bpmnElementType);
     final ExecutableFlowElement element = getElement(recordValue, processor);
-
-    // initialize the stuff
-    // TODO (saig0): init less stuff
-    context.init(record, intent, element, streamWriterProxy, sideEffectQueue);
 
     // process the event
     if (stateTransitionGuard.isValidStateTransition(context)) {

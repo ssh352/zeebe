@@ -32,7 +32,7 @@ public final class ResolveIncidentProcessor implements TypedRecordProcessor<Inci
   public static final String NO_INCIDENT_FOUND_MSG =
       "Expected to resolve incident with key '%d', but no such incident was found";
 
-  private final SideEffectQueue queue = new SideEffectQueue();
+  private final SideEffectQueue sideEffects = new SideEffectQueue();
   private final TypedResponseWriter noopResponseWriter = new NoopResponseWriter();
 
   private final ZeebeState zeebeState;
@@ -108,8 +108,14 @@ public final class ResolveIncidentProcessor implements TypedRecordProcessor<Inci
         zeebeState.getWorkflowState().getElementInstanceState().getFailedRecord(elementInstanceKey);
 
     if (failedRecord != null) {
+
+      sideEffects.clear();
+      sideEffects.add(responseWriter::flush);
+
       bpmnStreamProcessor.processRecord(
-          createRecord(failedRecord), noopResponseWriter, streamWriter, sideEffect);
+          createRecord(failedRecord), noopResponseWriter, streamWriter, sideEffects::add);
+
+      sideEffect.accept(sideEffects);
     }
   }
 

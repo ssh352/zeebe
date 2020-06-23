@@ -155,8 +155,7 @@ public final class ProcessingStateMachine {
 
     final int partitionId = logStream.getPartitionId();
     typedEvent = new TypedEventImpl(partitionId);
-    responseWriter =
-        new TypedResponseWriterImpl(context.getCommandResponseWriter(), partitionId);
+    responseWriter = new TypedResponseWriterImpl(context.getCommandResponseWriter(), partitionId);
 
     metrics = new StreamProcessorMetrics(partitionId);
     onProcessed = context.getOnProcessedListener();

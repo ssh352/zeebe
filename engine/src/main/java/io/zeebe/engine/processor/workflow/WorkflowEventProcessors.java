@@ -26,7 +26,6 @@ import io.zeebe.engine.state.ZeebeState;
 import io.zeebe.engine.state.deployment.WorkflowState;
 import io.zeebe.engine.state.instance.ElementInstanceState;
 import io.zeebe.engine.state.instance.VariablesState;
-import io.zeebe.engine.state.instance.WorkflowEngineState;
 import io.zeebe.engine.state.message.WorkflowInstanceSubscriptionState;
 import io.zeebe.protocol.impl.record.value.workflowinstance.WorkflowInstanceRecord;
 import io.zeebe.protocol.record.ValueType;
@@ -57,11 +56,10 @@ public final class WorkflowEventProcessors {
     final WorkflowInstanceSubscriptionState subscriptionState =
         zeebeState.getWorkflowInstanceSubscriptionState();
 
-    final WorkflowEngineState workflowEngineState =
-        new WorkflowEngineState(zeebeState.getPartitionId(), zeebeState.getWorkflowState());
-    typedRecordProcessors.withListener(workflowEngineState);
+    typedRecordProcessors.withListener(new UpdateVariableStreamWriter());
 
-    addWorkflowInstanceCommandProcessor(typedRecordProcessors, workflowEngineState, zeebeState);
+    addWorkflowInstanceCommandProcessor(
+        typedRecordProcessors, zeebeState.getWorkflowState().getElementInstanceState());
 
     final var bpmnStreamProcessor =
         new BpmnStreamProcessor(expressionProcessor, catchEventBehavior, zeebeState);
@@ -79,11 +77,10 @@ public final class WorkflowEventProcessors {
 
   private static void addWorkflowInstanceCommandProcessor(
       final TypedRecordProcessors typedRecordProcessors,
-      final WorkflowEngineState workflowEngineState,
-      final ZeebeState zeebeState) {
+      final ElementInstanceState elementInstanceState) {
 
     final WorkflowInstanceCommandProcessor commandProcessor =
-        new WorkflowInstanceCommandProcessor(workflowEngineState, zeebeState.getKeyGenerator());
+        new WorkflowInstanceCommandProcessor(elementInstanceState);
 
     WORKFLOW_INSTANCE_COMMANDS.forEach(
         intent ->
