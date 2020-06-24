@@ -102,7 +102,8 @@ public class StreamProcessor extends Actor implements HealthMonitorable {
 
       initProcessors();
 
-      processingStateMachine = new ProcessingStateMachine(processingContext, this::shouldProcessNext);
+      processingStateMachine =
+          new ProcessingStateMachine(processingContext, this::shouldProcessNext);
 
       healthCheckTick();
       openFuture.complete(null);
