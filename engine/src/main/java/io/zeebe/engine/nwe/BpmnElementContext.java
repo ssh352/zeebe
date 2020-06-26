@@ -12,6 +12,7 @@ import io.zeebe.protocol.record.intent.WorkflowInstanceIntent;
 import io.zeebe.protocol.record.value.BpmnElementType;
 import org.agrona.DirectBuffer;
 
+/** Workflow instance-related data of the element that is executed. */
 public interface BpmnElementContext {
 
   long getElementInstanceKey();

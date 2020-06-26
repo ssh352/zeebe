@@ -39,6 +39,8 @@ public final class ResolveIncidentProcessor implements TypedRecordProcessor<Inci
   private final TypedRecordProcessor<WorkflowInstanceRecord> bpmnStreamProcessor;
   private final JobErrorThrownProcessor jobErrorThrownProcessor;
 
+  private final IncidentRecordWrapper incidentRecordWrapper = new IncidentRecordWrapper();
+
   public ResolveIncidentProcessor(
       final ZeebeState zeebeState,
       final TypedRecordProcessor<WorkflowInstanceRecord> bpmnStreamProcessor,
@@ -112,16 +114,12 @@ public final class ResolveIncidentProcessor implements TypedRecordProcessor<Inci
       sideEffects.clear();
       sideEffects.add(responseWriter::flush);
 
+      incidentRecordWrapper.wrap(failedRecord);
       bpmnStreamProcessor.processRecord(
-          createRecord(failedRecord), noopResponseWriter, streamWriter, sideEffects::add);
+          incidentRecordWrapper, noopResponseWriter, streamWriter, sideEffects::add);
 
       sideEffect.accept(sideEffects);
     }
-  }
-
-  // TODO (saig0): need to pass the record properties for the new BPMN element processor
-  private TypedRecord<WorkflowInstanceRecord> createRecord(final IndexedRecord failedRecord) {
-    return new IncidentRecordWrapper(failedRecord);
   }
 
   private void attemptToSolveJobIncident(final long jobKey, final TypedStreamWriter streamWriter) {

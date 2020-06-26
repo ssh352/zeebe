@@ -9,7 +9,9 @@ package io.zeebe.engine.processor.workflow;
 
 import io.zeebe.engine.processor.SideEffectProducer;
 
+/** A chain of side effects that are executed/flushed together at the end of the processing. */
 public interface SideEffects {
 
-  void add(SideEffectProducer producer);
+  /** Chain the given side effect. It will be executed/flushed at the end of the processing. */
+  void add(SideEffectProducer sideEffect);
 }

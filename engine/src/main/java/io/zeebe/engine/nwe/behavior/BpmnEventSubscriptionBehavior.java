@@ -86,6 +86,30 @@ public final class BpmnEventSubscriptionBehavior {
     variablesState = elementInstanceState.getVariablesState();
   }
 
+  public <T extends ExecutableCatchEventSupplier> Either<Failure, Void> subscribeToEvents(
+      final T element, final BpmnElementContext context) {
+
+    try {
+      catchEventBehavior.subscribeToEvents(context, element, streamWriter, sideEffects);
+      return Either.right(null);
+
+    } catch (final MessageCorrelationKeyException e) {
+      return Either.left(
+          new Failure(e.getMessage(), ErrorType.EXTRACT_VALUE_ERROR, e.getVariableScopeKey()));
+
+    } catch (final EvaluationException e) {
+      return Either.left(
+          new Failure(
+              e.getMessage(), ErrorType.EXTRACT_VALUE_ERROR, context.getElementInstanceKey()));
+    } catch (final MessageNameException e) {
+      return Either.left(e.getFailure());
+    }
+  }
+
+  public void unsubscribeFromEvents(final BpmnElementContext context) {
+    catchEventBehavior.unsubscribeFromEvents(context, streamWriter, sideEffects);
+  }
+
   public void triggerBoundaryOrIntermediateEvent(
       final ExecutableReceiveTask element, final BpmnElementContext context) {
 
@@ -357,31 +381,6 @@ public final class BpmnEventSubscriptionBehavior {
         });
 
     return deferredStartEvent.isPresent();
-  }
-
-  // TODO (saig0): thing about extracting this
-  public <T extends ExecutableCatchEventSupplier> Either<Failure, Void> subscribeToEvents(
-      final T element, final BpmnElementContext context) {
-
-    try {
-      catchEventBehavior.subscribeToEvents(context, element, streamWriter, sideEffects);
-      return Either.right(null);
-
-    } catch (final MessageCorrelationKeyException e) {
-      return Either.left(
-          new Failure(e.getMessage(), ErrorType.EXTRACT_VALUE_ERROR, e.getVariableScopeKey()));
-
-    } catch (final EvaluationException e) {
-      return Either.left(
-          new Failure(
-              e.getMessage(), ErrorType.EXTRACT_VALUE_ERROR, context.getElementInstanceKey()));
-    } catch (final MessageNameException e) {
-      return Either.left(e.getFailure());
-    }
-  }
-
-  public void unsubscribeFromEvents(final BpmnElementContext context) {
-    catchEventBehavior.unsubscribeFromEvents(context, streamWriter, sideEffects);
   }
 
   public void triggerEventSubProcess(
