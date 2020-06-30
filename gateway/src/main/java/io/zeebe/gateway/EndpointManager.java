@@ -68,6 +68,7 @@ import java.util.function.Function;
 
 public final class EndpointManager extends GatewayGrpc.GatewayImplBase {
 
+  private static final String GRPC_ERROR_TEMPLATE = "Expected to handle gRPC request, but ";
   private final BrokerClient brokerClient;
   private final BrokerTopologyManager topologyManager;
   private final ActivateJobsHandler activateJobsHandler;
@@ -400,32 +401,36 @@ public final class EndpointManager extends GatewayGrpc.GatewayImplBase {
 
     if (cause instanceof BrokerErrorException) {
       status = mapBrokerErrorToStatus(((BrokerErrorException) cause).getError());
+      // When there is back pressure, there will be a lot of `RESOURCE_EXHAUSTED` errors and the log
+      // can get flooded. Until we find a way to limit the number of log messages,
+      // let's do not log them.
+      if (status.getCode() != Status.RESOURCE_EXHAUSTED.getCode()) {
+        Loggers.GATEWAY_LOGGER.error(GRPC_ERROR_TEMPLATE + "received error from broker", cause);
+      }
     } else if (cause instanceof BrokerRejectionException) {
       status = mapRejectionToStatus(((BrokerRejectionException) cause).getRejection());
+      Loggers.GATEWAY_LOGGER.trace(GRPC_ERROR_TEMPLATE + "broker rejected request", cause);
     } else if (cause instanceof ClientOutOfMemoryException) {
       status = Status.UNAVAILABLE.augmentDescription(cause.getMessage());
+      Loggers.GATEWAY_LOGGER.error(GRPC_ERROR_TEMPLATE + "gateway out of memory", cause);
     } else if (cause instanceof TimeoutException) { // can be thrown by transport
       status =
           Status.DEADLINE_EXCEEDED.augmentDescription(
               "Time out between gateway and broker: " + cause.getMessage());
+      Loggers.GATEWAY_LOGGER.trace(
+          GRPC_ERROR_TEMPLATE + "request timed out between gateway and broker", cause);
     } else if (cause instanceof GrpcStatusException) {
       status = ((GrpcStatusException) cause).getGrpcStatus();
+      Loggers.GATEWAY_LOGGER.error(GRPC_ERROR_TEMPLATE + "a GrpcStatusException occurred", cause);
     } else if (cause instanceof PartitionNotFoundException) {
       status = Status.NOT_FOUND.augmentDescription(cause.getMessage());
+      Loggers.GATEWAY_LOGGER.trace(GRPC_ERROR_TEMPLATE + "request could not be delivered", cause);
     } else {
       status = status.augmentDescription("Unexpected error occurred during the request processing");
+      Loggers.GATEWAY_LOGGER.error(GRPC_ERROR_TEMPLATE + "an unexpected error occurred", cause);
     }
 
-    final StatusRuntimeException convertedThrowable = status.withCause(cause).asRuntimeException();
-
-    // When there is back pressure, there will be a lot of `RESOURCE_EXHAUSTED` errors and the log
-    // can get flooded. Until we find a way to limit the number of log messages,
-    // let's do not log them.
-    if (status.getCode() != Status.RESOURCE_EXHAUSTED.getCode()) {
-      Loggers.GATEWAY_LOGGER.error("Error handling gRPC request", convertedThrowable);
-    }
-
-    return convertedThrowable;
+    return status.withCause(cause).asRuntimeException();
   }
 
   private static Status mapBrokerErrorToStatus(final BrokerError error) {
