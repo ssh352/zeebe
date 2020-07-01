@@ -17,7 +17,6 @@ import io.zeebe.broker.system.configuration.BrokerCfg;
 import io.zeebe.client.ZeebeClient;
 import io.zeebe.model.bpmn.Bpmn;
 import io.zeebe.model.bpmn.BpmnModelInstance;
-import io.zeebe.test.util.TestUtil;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -27,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -98,7 +98,9 @@ public class FailOverReplicationTest {
     clusteringRule.connect(oldLeader);
 
     // then
-    TestUtil.doRepeatedly(() -> getSegmentsCount(oldLeader)).until(count -> count >= segmentCount);
+    Awaitility.await().pollInterval(Duration.ofMillis(100))
+        .atMost(Duration.ofSeconds(10))
+        .until(() -> getSegmentsCount(oldLeader), count -> count >= segmentCount);
     assertThat(getSegmentsCount(oldLeader)).isGreaterThanOrEqualTo(segmentCount);
   }
 
