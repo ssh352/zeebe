@@ -8,6 +8,7 @@
 package io.zeebe.broker.it.clustering;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.atomix.raft.snapshot.impl.FileBasedSnapshotMetadata;
 import io.zeebe.broker.Broker;
@@ -24,6 +25,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Rule;
@@ -101,21 +103,30 @@ public class FailOverReplicationTest {
   }
 
   @Test
-  public void shouldStillReceiveEntriesAfterStepDown() {
+  public void shouldStillBeAbleToCompactAfterStepDown() {
     // given
-    final var segmentCount = 2;
     final var oldLeaderId = clusteringRule.getLeaderForPartition(1).getNodeId();
     final var oldLeader = clusteringRule.getBroker(oldLeaderId);
-    clusteringRule.stepDownFromPartition(1);
-    final List<Broker> others = clusteringRule.getOtherBrokerObjects(oldLeaderId);
-    fillSegments(others, segmentCount);
+    final var newLeader = clusteringRule.stepDownFromPartition(1);
+    fillSegments(List.copyOf(clusteringRule.getBrokers()), 10);
 
     // when
-    fillSegments(others, segmentCount);
+    final var oldLeaderNodeList = List.of(oldLeader);
+
+    final var followerSegmentCountsBeforeSnapshot = getSegmentCountByNodeId(oldLeaderNodeList);
+    awaitSnapshot(newLeader);
+    clusteringRule.waitForSnapshotAtBroker(oldLeader);
 
     // then
-    TestUtil.doRepeatedly(() -> getSegmentsCount(oldLeader)).until(count -> count >= segmentCount);
-    assertThat(getSegmentsCount(oldLeader)).isGreaterThanOrEqualTo(segmentCount);
+    await()
+        .untilAsserted(
+            () ->
+                assertThat(getSegmentCountByNodeId(oldLeaderNodeList))
+                    .describedAs("Expected less segments after a snapshot is taken")
+                    .allSatisfy(
+                        (nodeId, segmentCount) ->
+                            assertThat(segmentCount)
+                                .isLessThan(followerSegmentCountsBeforeSnapshot.get(nodeId))));
   }
 
   @Test
@@ -212,6 +223,13 @@ public class FailOverReplicationTest {
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  private Map<Integer, Integer> getSegmentCountByNodeId(final List<Broker> brokers) {
+    return brokers.stream()
+        .collect(
+            Collectors.toMap(
+                follower -> follower.getConfig().getCluster().getNodeId(), this::getSegmentsCount));
   }
 
   private void fillSegments(final List<Broker> brokers, final int segmentCount) {
