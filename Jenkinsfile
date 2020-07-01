@@ -23,6 +23,12 @@ pipeline {
       SONARCLOUD_TOKEN = credentials('zeebe-sonarcloud-token')
     }
 
+    if (env.BRANCH_NAME == 'run-develop-hourly') {
+      triggers {
+        cron('@hourly')
+      }
+    }
+
     options {
         buildDiscarder(logRotator(daysToKeepStr: daysToKeep, numToKeepStr: numToKeep))
         timestamps()
