@@ -24,8 +24,10 @@ pipeline {
     }
 
     triggers {
-      if (env.BRANCH_NAME == 'run-develop-hourly') {
-          cron('@hourly')
+      script {
+        if (env.BRANCH_NAME == 'run-develop-hourly') {
+            cron('@hourly')
+        }
       }
     }
 
