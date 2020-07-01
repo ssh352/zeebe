@@ -77,7 +77,7 @@ public class FailOverReplicationTest {
 
     // when
     final List<Broker> others = clusteringRule.getOtherBrokerObjects(oldLeaderId);
-    fillSegments(others, segmentCount);
+    awaitFilledSegmentsOnBrokers(others, segmentCount);
 
     // then
     assertThat(getSegmentsCount(oldLeader)).isLessThan(segmentCount);
@@ -91,7 +91,7 @@ public class FailOverReplicationTest {
     final var oldLeader = clusteringRule.getBroker(leaderNodeId);
     clusteringRule.disconnect(oldLeader);
     final List<Broker> followers = clusteringRule.getOtherBrokerObjects(leaderNodeId);
-    fillSegments(followers, segmentCount);
+    awaitFilledSegmentsOnBrokers(followers, segmentCount);
 
     // when
     clusteringRule.connect(oldLeader);
@@ -113,7 +113,7 @@ public class FailOverReplicationTest {
     final var newLeaderInfo = clusteringRule.awaitOtherLeader(1, previousLeaderId);
     final var newLeader = clusteringRule.getBroker(newLeaderInfo.getNodeId());
     final List<Broker> followers = clusteringRule.getOtherBrokerObjects(previousLeaderId);
-    fillSegments(followers, segmentCount);
+    awaitFilledSegmentsOnBrokers(followers, segmentCount);
     final var snapshotMetadata = awaitSnapshot(newLeader);
 
     // when
@@ -130,7 +130,6 @@ public class FailOverReplicationTest {
     // given
     final var previousLeaderId = clusteringRule.getLeaderForPartition(1).getNodeId();
     final var previousLeader = clusteringRule.getBroker(previousLeaderId);
-    // send some commands
     client.newDeployCommand().addWorkflowModel(WORKFLOW, WORKFLOW_RESOURCE_NAME).send().join();
 
     // disconnect leader - becomes follower
@@ -159,7 +158,7 @@ public class FailOverReplicationTest {
 
     // Leader and Follower A have new entries
     // which Follower B - old leader hasn't
-    fillSegments(List.of(newLeader, followerA), 2);
+    awaitFilledSegmentsOnBrokers(List.of(newLeader, followerA), 2);
     awaitSnapshot(newLeader);
     clusteringRule.waitForSnapshotAtBroker(followerA);
 
@@ -206,7 +205,7 @@ public class FailOverReplicationTest {
                 follower -> follower.getConfig().getCluster().getNodeId(), this::getSegmentsCount));
   }
 
-  private void fillSegments(final List<Broker> brokers, final int segmentCount) {
+  private void awaitFilledSegmentsOnBrokers(final List<Broker> brokers, final int segmentCount) {
 
     while (brokers.stream().map(this::getSegmentsCount).allMatch(count -> count <= segmentCount)) {
 
