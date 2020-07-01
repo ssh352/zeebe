@@ -29,6 +29,8 @@ import io.zeebe.broker.PartitionListener;
 import io.zeebe.broker.SpringBrokerBridge;
 import io.zeebe.broker.clustering.atomix.AtomixFactory;
 import io.zeebe.broker.system.configuration.BrokerCfg;
+import io.zeebe.broker.system.configuration.NetworkCfg;
+import io.zeebe.broker.system.configuration.SocketBindingCfg;
 import io.zeebe.client.ZeebeClient;
 import io.zeebe.client.ZeebeClientBuilder;
 import io.zeebe.client.api.response.BrokerInfo;
@@ -187,6 +189,16 @@ public final class ClusteringRule extends ExternalResource {
     // create brokers
     for (int nodeId = 0; nodeId < clusterSize; nodeId++) {
       getBroker(nodeId);
+    }
+
+    for (int nodeId = 0; nodeId < clusterSize; nodeId++) {
+      final var brokerCfg = getBrokerCfg(nodeId);
+
+      setInitialContactPoints(
+          brokerCfgs.values().stream().map(BrokerCfg::getNetwork).map(NetworkCfg::getInternalApi)
+              .map(
+                  SocketBindingCfg::getAddress).map(io.zeebe.util.SocketUtil::toHostAndPortString)
+              .toArray(String[]::new)).accept(brokerCfg);
     }
 
     // create gateway
