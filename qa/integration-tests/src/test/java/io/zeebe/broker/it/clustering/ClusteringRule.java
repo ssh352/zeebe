@@ -548,9 +548,8 @@ public final class ClusteringRule extends ExternalResource {
     final var raftPartition =
         atomix.getPartitionService().getPartitionGroup(AtomixFactory.GROUP_NAME).getPartitions()
             .stream()
-            .filter(
-                partition ->
-                    partition.members().contains(nodeId) && partition.id().id() == partitionId)
+            .filter(partition -> partition.members().contains(nodeId))
+            .filter(partition -> partition.id().id() == partitionId)
             .map(RaftPartition.class::cast)
             .findFirst()
             .orElseThrow();
