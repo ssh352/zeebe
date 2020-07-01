@@ -64,6 +64,8 @@ public class FailOverReplicationTest {
     assertThat(newLeader.getNodeId()).isNotEqualTo(leaderNodeId);
   }
 
+  // This test verifies that disconnect works as expected, otherwise the other tests are useless.
+  // This test can be removed if we migrate the tests to test containers
   @Test
   public void shouldNotReceiveEntriesOnDisconnect() {
     // given
