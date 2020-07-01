@@ -194,17 +194,17 @@ public final class ClusteringRule extends ExternalResource {
       getBroker(nodeId);
     }
 
+    final var contactPoints =
+        brokerCfgs.values().stream()
+            .map(BrokerCfg::getNetwork)
+            .map(NetworkCfg::getInternalApi)
+            .map(SocketBindingCfg::getAddress)
+            .map(io.zeebe.util.SocketUtil::toHostAndPortString)
+            .toArray(String[]::new);
+
     for (int nodeId = 0; nodeId < clusterSize; nodeId++) {
       final var brokerCfg = getBrokerCfg(nodeId);
-
-      setInitialContactPoints(
-              brokerCfgs.values().stream()
-                  .map(BrokerCfg::getNetwork)
-                  .map(NetworkCfg::getInternalApi)
-                  .map(SocketBindingCfg::getAddress)
-                  .map(io.zeebe.util.SocketUtil::toHostAndPortString)
-                  .toArray(String[]::new))
-          .accept(brokerCfg);
+      setInitialContactPoints(contactPoints).accept(brokerCfg);
     }
 
     // create gateway
