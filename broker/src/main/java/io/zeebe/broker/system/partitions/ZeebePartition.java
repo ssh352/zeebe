@@ -411,12 +411,13 @@ public final class ZeebePartition extends Actor
   }
 
   private void registerSnapshotListenerForReplication() {
-    managedResources.add(
-        () -> {
-          persistedSnapshotStore.removeSnapshotListener(snapshotController);
-          return CompletableActorFuture.completed(null);
-        });
+    managedResources.add(this::removeSnapshotListenerForReplication);
     persistedSnapshotStore.addSnapshotListener(snapshotController);
+  }
+
+  private ActorFuture<Void> removeSnapshotListenerForReplication() {
+    persistedSnapshotStore.removeSnapshotListener(snapshotController);
+    return CompletableActorFuture.completed(null);
   }
 
   private StateControllerImpl createSnapshotController() {
