@@ -141,6 +141,14 @@
   </dependencies>
 
   <build>
+    <!-- NOTE: required to access the version as a resource-->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -158,12 +166,6 @@
         <artifactId>clirr-maven-plugin</artifactId>
       </plugin>
     </plugins>
-      <resources>
-        <resource>
-          <directory>src/main/resources</directory>
-          <filtering>true</filtering>
-        </resource>
-      </resources>
   </build>
 </project>
 

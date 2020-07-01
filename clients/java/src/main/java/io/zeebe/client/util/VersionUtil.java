@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 
 public final class VersionUtil {
 
-  public static final Logger LOG = Loggers.VERSION_LOGGER;
+  public static final Logger LOG = Loggers.LOGGER;
 
   private static final String VERSION_PROPERTIES_PATH = "/client-java.properties";
   private static final String VERSION_PROPERTY_NAME = "zeebe.version";
