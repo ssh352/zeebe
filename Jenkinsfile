@@ -7,6 +7,7 @@ def buildName = "${env.JOB_BASE_NAME.replaceAll("%2F", "-").replaceAll("\\.", "-
 //for develop branch keep builds for 7 days to be able to analyse build errors, for all other branches, keep the last 10 builds
 def daysToKeep = (env.BRANCH_NAME=='develop') ? '7' : '-1'
 def numToKeep = (env.BRANCH_NAME=='develop') ? '-1' : '10'
+def cronTrigger = (env.BRANCH_NAME=='develop') ? '@hourly' : ''
 
 pipeline {
     agent {
@@ -23,12 +24,8 @@ pipeline {
       SONARCLOUD_TOKEN = credentials('zeebe-sonarcloud-token')
     }
 
-    script {
-      if (env.BRANCH_NAME == 'run-develop-hourly') {
-        triggers {
-          cron('@hourly')
-        }
-      }
+    triggers {
+      cron(cronTrigger)
     }
 
     options {
