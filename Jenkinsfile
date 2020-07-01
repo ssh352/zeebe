@@ -23,9 +23,9 @@ pipeline {
       SONARCLOUD_TOKEN = credentials('zeebe-sonarcloud-token')
     }
 
-    if (env.BRANCH_NAME == 'run-develop-hourly') {
-      triggers {
-        cron('@hourly')
+    triggers {
+      if (env.BRANCH_NAME == 'run-develop-hourly') {
+          cron('@hourly')
       }
     }
 
