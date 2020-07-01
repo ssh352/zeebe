@@ -19,9 +19,12 @@ import static io.zeebe.test.util.TestUtil.doRepeatedly;
 import static io.zeebe.test.util.TestUtil.waitUntil;
 
 import io.atomix.cluster.AtomixCluster;
+import io.atomix.cluster.MemberId;
 import io.atomix.cluster.discovery.BootstrapDiscoveryProvider;
+import io.atomix.cluster.messaging.impl.NettyMessagingService;
 import io.atomix.cluster.protocol.SwimMembershipProtocol;
 import io.atomix.core.Atomix;
+import io.atomix.raft.partition.RaftPartition;
 import io.atomix.raft.snapshot.impl.FileBasedSnapshotMetadata;
 import io.atomix.utils.net.Address;
 import io.zeebe.broker.Broker;
@@ -195,10 +198,13 @@ public final class ClusteringRule extends ExternalResource {
       final var brokerCfg = getBrokerCfg(nodeId);
 
       setInitialContactPoints(
-          brokerCfgs.values().stream().map(BrokerCfg::getNetwork).map(NetworkCfg::getInternalApi)
-              .map(
-                  SocketBindingCfg::getAddress).map(io.zeebe.util.SocketUtil::toHostAndPortString)
-              .toArray(String[]::new)).accept(brokerCfg);
+              brokerCfgs.values().stream()
+                  .map(BrokerCfg::getNetwork)
+                  .map(NetworkCfg::getInternalApi)
+                  .map(SocketBindingCfg::getAddress)
+                  .map(io.zeebe.util.SocketUtil::toHostAndPortString)
+                  .toArray(String[]::new))
+          .accept(brokerCfg);
     }
 
     // create gateway
@@ -522,6 +528,52 @@ public final class ClusteringRule extends ExternalResource {
         .flatMap(broker -> broker.getPartitions().stream())
         .filter(PartitionInfo::isLeader)
         .count();
+  }
+
+  public Broker stepDownFromPartition(final int partitionId) {
+    final int leaderNodeId = getLeaderForPartition(partitionId).getNodeId();
+    final Broker leader = getBroker(leaderNodeId);
+    stepDown(leader, partitionId);
+
+    final BrokerInfo newLeaderInfo = awaitOtherLeader(partitionId, leaderNodeId);
+
+    return getBroker(newLeaderInfo.getNodeId());
+  }
+
+  public BrokerInfo awaitOtherLeader(final int partitionId, final int previousLeader) {
+    return doRepeatedly(() -> getLeaderForPartition(partitionId))
+        .until(curLeader -> curLeader.getNodeId() != previousLeader, 1000);
+  }
+
+  public void stepDown(final Broker broker, final int partitionId) {
+    final var atomix = broker.getAtomix();
+    final MemberId nodeId = atomix.getMembershipService().getLocalMember().id();
+
+    final var raftPartition =
+        atomix.getPartitionService().getPartitionGroup(AtomixFactory.GROUP_NAME).getPartitions()
+            .stream()
+            .filter(
+                partition ->
+                    partition.members().contains(nodeId) && partition.id().id() == partitionId)
+            .map(RaftPartition.class::cast)
+            .findFirst()
+            .orElseThrow();
+
+    raftPartition.getServer().stepDown().join();
+  }
+
+  public void disconnect(final Broker broker) {
+    final var atomix = broker.getAtomix();
+
+    final var messagingService = (NettyMessagingService) atomix.getMessagingService();
+    messagingService.stop().join();
+  }
+
+  public void connect(final Broker broker) {
+    final var atomix = broker.getAtomix();
+
+    final var messagingService = (NettyMessagingService) atomix.getMessagingService();
+    messagingService.start().join();
   }
 
   public void stopBrokerAndAwaitNewLeader(final int nodeId) {
