@@ -8,7 +8,6 @@
 package io.zeebe.broker.it.clustering;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 import io.atomix.raft.snapshot.impl.FileBasedSnapshotMetadata;
 import io.zeebe.broker.Broker;
@@ -102,33 +101,6 @@ public class FailOverReplicationTest {
         .atMost(Duration.ofSeconds(10))
         .until(() -> getSegmentsCount(oldLeader), count -> count >= segmentCount);
     assertThat(getSegmentsCount(oldLeader)).isGreaterThanOrEqualTo(segmentCount);
-  }
-
-  @Test
-  public void shouldStillBeAbleToCompactAfterStepDown() {
-    // given
-    final var oldLeaderId = clusteringRule.getLeaderForPartition(1).getNodeId();
-    final var oldLeader = clusteringRule.getBroker(oldLeaderId);
-    final var newLeader = clusteringRule.stepDownFromPartition(1);
-    fillSegments(List.copyOf(clusteringRule.getBrokers()), 10);
-
-    // when
-    final var oldLeaderNodeList = List.of(oldLeader);
-
-    final var followerSegmentCountsBeforeSnapshot = getSegmentCountByNodeId(oldLeaderNodeList);
-    awaitSnapshot(newLeader);
-    clusteringRule.waitForSnapshotAtBroker(oldLeader);
-
-    // then
-    await()
-        .untilAsserted(
-            () ->
-                assertThat(getSegmentCountByNodeId(oldLeaderNodeList))
-                    .describedAs("Expected less segments after a snapshot is taken")
-                    .allSatisfy(
-                        (nodeId, segmentCount) ->
-                            assertThat(segmentCount)
-                                .isLessThan(followerSegmentCountsBeforeSnapshot.get(nodeId))));
   }
 
   @Test
