@@ -713,7 +713,7 @@ public class SegmentedJournal<E> implements Journal<E> {
 
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private Supplier<JournalIndex> journalIndexFactory;
-    private long freeDiskBuffer = DEFAULT_MIN_FREE_DISK_SPACE;
+    private long freeDiskSpace = DEFAULT_MIN_FREE_DISK_SPACE;
 
     protected Builder() {}
 
@@ -817,13 +817,13 @@ public class SegmentedJournal<E> implements Journal<E> {
     /**
      * Sets the minimum free disk space to leave when allocating a new segment
      *
-     * @param freeDiskBuffer free disk space in bytes
+     * @param freeDiskSpace free disk space in bytes
      * @return the storage builder
-     * @throws IllegalArgumentException if the {@code freeDiskBuffer} is not positive
+     * @throws IllegalArgumentException if the {@code freeDiskSpace} is not positive
      */
-    public Builder<E> withFreeDiskBuffer(final long freeDiskBuffer) {
-      checkArgument(freeDiskBuffer > 0, "minFreeDiskSpace must be positive");
-      this.freeDiskBuffer = freeDiskBuffer;
+    public Builder<E> withFreeDiskSpace(final long freeDiskSpace) {
+      checkArgument(freeDiskSpace > 0, "minFreeDiskSpace must be positive");
+      this.freeDiskSpace = freeDiskSpace;
       return this;
     }
 
@@ -900,7 +900,7 @@ public class SegmentedJournal<E> implements Journal<E> {
           maxEntriesPerSegment,
           flushOnCommit,
           journalIndexFactory,
-          freeDiskBuffer);
+          freeDiskSpace);
     }
   }
 }

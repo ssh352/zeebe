@@ -7,9 +7,15 @@
  */
 package io.zeebe.broker.system.monitoring;
 
+/**
+ * Used by DiskSpaceUsageMonitor to notify listeners when disk space usage grows above (and below)
+ * the configured threshold
+ */
 public interface DiskSpaceUsageListener {
 
+  /** Will be called when disk space usage grows above the threshold */
   default void onDiskSpaceNotAvailable() {}
 
+  /** Will be called when disk space usage goes below the threshold after it was above it. */
   default void onDiskSpaceAvailable() {}
 }

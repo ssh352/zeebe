@@ -189,7 +189,7 @@ public final class RaftStorage {
    *
    * @return the percentage of disk space that must be available before log compaction is forced
    */
-  public long freeDiskBuffer() {
+  public long freeDiskSpace() {
     return freeDiskSpace;
   }
 
@@ -317,7 +317,7 @@ public final class RaftStorage {
         .withNamespace(namespace)
         .withMaxSegmentSize(maxSegmentSize)
         .withMaxEntrySize(maxEntrySize)
-        .withFreeDiskBuffer(freeDiskSpace)
+        .withFreeDiskSpace(freeDiskSpace)
         .withMaxEntriesPerSegment(maxEntriesPerSegment)
         .withFlushOnCommit(flushOnCommit)
         .withJournalIndexFactory(journalIndexFactory)
@@ -400,7 +400,7 @@ public final class RaftStorage {
     private static final int DEFAULT_MAX_ENTRY_SIZE = 1024 * 1024; // 1MB
     private static final int DEFAULT_MAX_ENTRIES_PER_SEGMENT = 1024 * 1024;
     private static final boolean DEFAULT_DYNAMIC_COMPACTION = true;
-    private static final long DEFAULT_FREE_DISK_BUFFER = 1024L * 1024 * 1024; // 1GB
+    private static final long DEFAULT_FREE_DISK_SPACE = 1024L * 1024 * 1024; // 1GB
     private static final double DEFAULT_FREE_MEMORY_BUFFER = .2;
     private static final boolean DEFAULT_FLUSH_ON_COMMIT = true;
     private static final boolean DEFAULT_RETAIN_STALE_SNAPSHOTS = false;
@@ -413,7 +413,7 @@ public final class RaftStorage {
     private int maxEntrySize = DEFAULT_MAX_ENTRY_SIZE;
     private int maxEntriesPerSegment = DEFAULT_MAX_ENTRIES_PER_SEGMENT;
     private boolean dynamicCompaction = DEFAULT_DYNAMIC_COMPACTION;
-    private long freeDiskSpace = DEFAULT_FREE_DISK_BUFFER;
+    private long freeDiskSpace = DEFAULT_FREE_DISK_SPACE;
     private double freeMemoryBuffer = DEFAULT_FREE_MEMORY_BUFFER;
     private boolean flushOnCommit = DEFAULT_FLUSH_ON_COMMIT;
     private boolean retainStaleSnapshots = DEFAULT_RETAIN_STALE_SNAPSHOTS;

@@ -177,7 +177,9 @@ public final class Broker implements AutoCloseable {
     startContext.addStep("cluster services", () -> atomix.start().join());
     startContext.addStep("topology manager", () -> topologyManagerStep(clusterCfg, localBroker));
     startContext.addStep(
-        "monitoring services", () -> monitoringServerStep(brokerCfg.getData(), localBroker));
+        "monitoring services", () -> monitoringServerStep(localBroker));
+    startContext.addStep(
+        "disk space monitor", () -> diskSpaceMonitorStep(brokerCfg.getData()));
     startContext.addStep(
         "leader management request handler", () -> managementRequestStep(localBroker));
     startContext.addStep(
@@ -282,19 +284,19 @@ public final class Broker implements AutoCloseable {
     return topologyManager;
   }
 
-  private AutoCloseable monitoringServerStep(final DataCfg data, final BrokerInfo localBroker) {
+  private AutoCloseable monitoringServerStep(final BrokerInfo localBroker) {
     healthCheckService = new BrokerHealthCheckService(localBroker, atomix);
     springBrokerBridge.registerBrokerHealthCheckServiceSupplier(() -> healthCheckService);
     partitionListeners.add(healthCheckService);
     scheduleActor(healthCheckService);
+    return () -> healthCheckService.close();
+  }
 
+  private AutoCloseable diskSpaceMonitorStep(final DataCfg data) {
     diskSpaceUsageMonitor = new DiskSpaceUsageMonitor(data);
     scheduleActor(diskSpaceUsageMonitor);
     diskSpaceUsageListeners.forEach(l -> diskSpaceUsageMonitor.addDiskUsageListener(l));
-    return () -> {
-      healthCheckService.close();
-      diskSpaceUsageMonitor.close();
-    };
+    return () -> diskSpaceUsageMonitor.close();
   }
 
   private AutoCloseable managementRequestStep(final BrokerInfo localBroker) {
