@@ -176,10 +176,8 @@ public final class Broker implements AutoCloseable {
     }
     startContext.addStep("cluster services", () -> atomix.start().join());
     startContext.addStep("topology manager", () -> topologyManagerStep(clusterCfg, localBroker));
-    startContext.addStep(
-        "monitoring services", () -> monitoringServerStep(localBroker));
-    startContext.addStep(
-        "disk space monitor", () -> diskSpaceMonitorStep(brokerCfg.getData()));
+    startContext.addStep("monitoring services", () -> monitoringServerStep(localBroker));
+    startContext.addStep("disk space monitor", () -> diskSpaceMonitorStep(brokerCfg.getData()));
     startContext.addStep(
         "leader management request handler", () -> managementRequestStep(localBroker));
     startContext.addStep(

@@ -30,7 +30,7 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 public class DiskSpaceRecoveryITTest {
   static ZeebeBrokerContainer zeebeBroker;
   private static final Logger LOG = LoggerFactory.getLogger("TEST");
-  private static final String VOLUME_NAME = "tmpdata1";
+  private static final String VOLUME_NAME = "data-DiskSpaceRecoveryITTest";
   private static String containerIPAddress;
   private static Integer apiPort;
   private static ElasticsearchContainer elastic;
@@ -123,7 +123,7 @@ public class DiskSpaceRecoveryITTest {
     // then
     await()
         .pollInterval(Duration.ofSeconds(10))
-        .timeout(Duration.ofMinutes(5))
+        .timeout(Duration.ofMinutes(2))
         .untilAsserted(() -> assertThatCode(this::publishMessage).doesNotThrowAnyException());
   }
 
