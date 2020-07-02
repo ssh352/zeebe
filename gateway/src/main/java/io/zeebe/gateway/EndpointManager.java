@@ -14,7 +14,6 @@ import io.grpc.stub.StreamObserver;
 import io.zeebe.gateway.ResponseMapper.BrokerResponseMapper;
 import io.zeebe.gateway.cmd.BrokerErrorException;
 import io.zeebe.gateway.cmd.BrokerRejectionException;
-import io.zeebe.gateway.cmd.ClientOutOfMemoryException;
 import io.zeebe.gateway.cmd.GrpcStatusException;
 import io.zeebe.gateway.cmd.GrpcStatusExceptionImpl;
 import io.zeebe.gateway.cmd.PartitionNotFoundException;
@@ -409,22 +408,19 @@ public final class EndpointManager extends GatewayGrpc.GatewayImplBase {
       }
     } else if (cause instanceof BrokerRejectionException) {
       status = mapRejectionToStatus(((BrokerRejectionException) cause).getRejection());
-      Loggers.GATEWAY_LOGGER.trace(GRPC_ERROR_TEMPLATE + "broker rejected request", cause);
-    } else if (cause instanceof ClientOutOfMemoryException) {
-      status = Status.UNAVAILABLE.augmentDescription(cause.getMessage());
-      Loggers.GATEWAY_LOGGER.error(GRPC_ERROR_TEMPLATE + "gateway out of memory", cause);
+      Loggers.GATEWAY_LOGGER.debug(GRPC_ERROR_TEMPLATE + "broker rejected request", cause);
     } else if (cause instanceof TimeoutException) { // can be thrown by transport
       status =
           Status.DEADLINE_EXCEEDED.augmentDescription(
               "Time out between gateway and broker: " + cause.getMessage());
-      Loggers.GATEWAY_LOGGER.trace(
+      Loggers.GATEWAY_LOGGER.debug(
           GRPC_ERROR_TEMPLATE + "request timed out between gateway and broker", cause);
     } else if (cause instanceof GrpcStatusException) {
       status = ((GrpcStatusException) cause).getGrpcStatus();
       Loggers.GATEWAY_LOGGER.error(GRPC_ERROR_TEMPLATE + "a GrpcStatusException occurred", cause);
     } else if (cause instanceof PartitionNotFoundException) {
       status = Status.NOT_FOUND.augmentDescription(cause.getMessage());
-      Loggers.GATEWAY_LOGGER.trace(GRPC_ERROR_TEMPLATE + "request could not be delivered", cause);
+      Loggers.GATEWAY_LOGGER.debug(GRPC_ERROR_TEMPLATE + "request could not be delivered", cause);
     } else {
       status = status.augmentDescription("Unexpected error occurred during the request processing");
       Loggers.GATEWAY_LOGGER.error(GRPC_ERROR_TEMPLATE + "an unexpected error occurred", cause);
