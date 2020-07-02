@@ -187,7 +187,7 @@ public final class RaftStorage {
   /**
    * Returns the percentage of disk space that must be available before log compaction is forced.
    *
-   * @return the percentage of disk space that must be available before log compaction is forced
+   * @return the amount of disk space that must be available before log compaction is forced
    */
   public long freeDiskSpace() {
     return freeDiskSpace;
