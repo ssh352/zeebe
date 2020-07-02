@@ -9,7 +9,6 @@ package io.zeebe.broker.system.configuration;
 
 import static io.zeebe.util.StringUtil.LIST_SANITIZER;
 
-import com.google.common.base.Preconditions;
 import io.atomix.storage.StorageLevel;
 import java.io.File;
 import java.time.Duration;
@@ -97,10 +96,6 @@ public final class DataCfg implements ConfigurationEntry {
   }
 
   public void setDiskUsageCommandWatermark(final double diskUsageCommandWatermark) {
-    Preconditions.checkArgument(
-        diskUsageCommandWatermark > 0 && diskUsageCommandWatermark < 1,
-        "Expected diskUsageCommandWatermark to be in the range (0,1), but found %d",
-        diskUsageCommandWatermark);
     this.diskUsageCommandWatermark = diskUsageCommandWatermark;
   }
 
@@ -114,10 +109,6 @@ public final class DataCfg implements ConfigurationEntry {
   }
 
   public void setDiskUsageReplicationWatermark(final double diskUsageReplicationWatermark) {
-    Preconditions.checkArgument(
-        diskUsageReplicationWatermark > 0 && diskUsageReplicationWatermark < 1,
-        "Expected diskUsageReplicationWatermark to be in the range (0,1), but found %d",
-        diskUsageReplicationWatermark);
     this.diskUsageReplicationWatermark = diskUsageReplicationWatermark;
   }
 
