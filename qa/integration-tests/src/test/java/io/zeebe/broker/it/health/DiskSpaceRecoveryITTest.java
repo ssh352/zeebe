@@ -124,7 +124,7 @@ public class DiskSpaceRecoveryITTest {
     // then
     await()
         .pollInterval(Duration.ofSeconds(10))
-        .timeout(Duration.ofMinutes(2))
+        .timeout(Duration.ofMinutes(3))
         .untilAsserted(() -> assertThatCode(this::publishMessage).doesNotThrowAnyException());
   }
 
