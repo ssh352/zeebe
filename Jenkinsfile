@@ -8,6 +8,7 @@ def buildName = "${env.JOB_BASE_NAME.replaceAll("%2F", "-").replaceAll("\\.", "-
 def daysToKeep = (env.BRANCH_NAME=='develop') ? '7' : '-1'
 def numToKeep = (env.BRANCH_NAME=='develop') ? '-1' : '10'
 def cronTrigger = (env.BRANCH_NAME=='run-develop-hourly') ? '@hourly' : ''
+def isTriggeredByTimer = !currentBuild.getBuildCauses('hudson.triggers.TimerTrigger$TimerTriggerCause').isEmpty()
 
 pipeline {
     agent {
@@ -49,6 +50,7 @@ pipeline {
                     }
                 }
                 container('maven') {
+                    sh "echo 'Triggered by timer: ${isTriggeredByTimer}'"
                     sh '.ci/scripts/distribution/prepare.sh'
                 }
                 container('maven-jdk8') {
