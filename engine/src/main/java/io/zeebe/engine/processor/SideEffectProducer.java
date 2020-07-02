@@ -8,7 +8,7 @@
 package io.zeebe.engine.processor;
 
 /**
- * An action that is executed add the end of the processing. It will <b>not</b> be executed during
+ * An action that is executed at the end of the processing. It will <b>not</b> be executed during
  * the re-processing.
  */
 @FunctionalInterface

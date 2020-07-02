@@ -9,7 +9,6 @@ package io.zeebe.engine.nwe;
 
 import static io.zeebe.util.buffer.BufferUtil.bufferAsString;
 
-import io.zeebe.engine.processor.TypedRecord;
 import io.zeebe.protocol.impl.record.value.workflowinstance.WorkflowInstanceRecord;
 import io.zeebe.protocol.record.intent.WorkflowInstanceIntent;
 import io.zeebe.protocol.record.value.BpmnElementType;
@@ -88,17 +87,16 @@ public final class BpmnElementContextImpl implements BpmnElementContext {
       final WorkflowInstanceIntent intent) {
 
     final var copy = new BpmnElementContextImpl();
-    copy.elementInstanceKey = elementInstanceKey;
-    copy.recordValue = recordValue;
-    copy.intent = intent;
-
+    copy.init(elementInstanceKey, recordValue, intent);
     return copy;
   }
 
   public void init(
-      final TypedRecord<WorkflowInstanceRecord> record, final WorkflowInstanceIntent intent) {
-    elementInstanceKey = record.getKey();
-    recordValue = record.getValue();
+      final long elementInstanceKey,
+      final WorkflowInstanceRecord recordValue,
+      final WorkflowInstanceIntent intent) {
+    this.elementInstanceKey = elementInstanceKey;
+    this.recordValue = recordValue;
     this.intent = intent;
   }
 

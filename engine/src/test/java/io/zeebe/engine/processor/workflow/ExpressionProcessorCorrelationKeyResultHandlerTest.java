@@ -23,9 +23,11 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class ExpressionProcessorCorrelationKeyResultHandlerTest {
 
-  public static final String TEST_EXPRESSION = "expression";
+  private static final String TEST_EXPRESSION = "expression";
+  private static final long VARIABLE_SCOPE_KEY = 21;
 
-  CorrelationKeyResultHandler sutResultHandler = new CorrelationKeyResultHandler(-1);
+  private final CorrelationKeyResultHandler sutResultHandler =
+      new CorrelationKeyResultHandler(VARIABLE_SCOPE_KEY);
 
   @Test
   public void shouldReturnStringForStringResult() {

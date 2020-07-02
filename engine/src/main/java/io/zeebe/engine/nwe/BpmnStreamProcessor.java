@@ -80,12 +80,11 @@ public final class BpmnStreamProcessor implements TypedRecordProcessor<WorkflowI
     sideEffect.accept(sideEffectQueue);
 
     final var intent = (WorkflowInstanceIntent) record.getIntent();
-
-    context.init(record, intent);
-
     final var recordValue = record.getValue();
-    final var bpmnElementType = recordValue.getBpmnElementType();
 
+    context.init(record.getKey(), recordValue, intent);
+
+    final var bpmnElementType = recordValue.getBpmnElementType();
     final var processor = processors.getProcessor(bpmnElementType);
     final ExecutableFlowElement element = getElement(recordValue, processor);
 
