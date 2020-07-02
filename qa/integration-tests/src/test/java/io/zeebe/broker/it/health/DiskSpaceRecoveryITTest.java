@@ -58,8 +58,9 @@ public class DiskSpaceRecoveryITTest {
             .withEnv("ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_BULK_DELAY", "1")
             .withEnv("ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_BULK_SIZE", "1")
             .withEnv("ZEEBE_BROKER_DATA_SNAPSHOTPERIOD", "1m")
-            .withEnv("ZEEBE_BROKER_DATA_LOGSEGMENTSIZE", "4MB")
-            .withEnv("ZEEBE_BROKER_DATA_DISKUSAGECOMMANDWATERMARK", "0.5")
+            .withEnv("ZEEBE_BROKER_DATA_LOGSEGMENTSIZE", "1MB")
+            .withEnv("ZEEBE_BROKER_NETWORK_MAXMESSAGESIZE", "1MB")
+            .withEnv("ZEEBE_BROKER_DATA_DISKUSAGECOMMANDWATERMARK", "0.25")
             .withEnv("ZEEBE_BROKER_DATA_LOGINDEXDENSITY", "1")
             .withEnv("ZEEBE_BROKER_EXPORTERS_ELASTICSEARCH_ARGS_INDEX_MESSAGE", "true");
 
@@ -67,7 +68,7 @@ public class DiskSpaceRecoveryITTest {
         .getDockerClient()
         .createVolumeCmd()
         .withDriver("local")
-        .withDriverOpts(Map.of("type", "tmpfs", "device", "tmpfs", "o", "size=32m"))
+        .withDriverOpts(Map.of("type", "tmpfs", "device", "tmpfs", "o", "size=16m"))
         .withName(VOLUME_NAME)
         .exec();
     final Volume newVolume = new Volume("/usr/local/zeebe/data");
